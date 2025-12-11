@@ -1,0 +1,359 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  PATIENT
+  DOCTOR
+  ADMIN
+}
+
+enum AppointmentStatus {
+  PENDING
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+  MISSED
+}
+
+enum RiskLevel {
+  LOW
+  HIGH
+}
+
+enum DoctorStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  SUSPENDED
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+enum PaymentMethod {
+  CASH
+  CARD
+  ONLINE
+  INSURANCE
+}
+
+enum MedicalRecordType {
+  CONSULTATION
+  LAB_REPORT
+  DIAGNOSIS
+  TREATMENT
+  FOLLOW_UP
+}
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  passwordHash  String    @map("password_hash")
+  role          UserRole  @default(PATIENT)
+  firstName     String?   @map("first_name")
+  lastName      String?   @map("last_name")
+  phone         String?
+  dateOfBirth   DateTime? @map("date_of_birth")
+  address       String?
+  insuranceProvider String? @map("insurance_provider")
+  insurancePolicyNumber String? @map("insurance_policy_number")
+  isActive      Boolean  @default(true) @map("is_active")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  patientAppointments Appointment[] @relation("PatientAppointments")
+  doctorAppointments Appointment[] @relation("DoctorAppointments")
+  doctorProfile       Doctor?
+  riskPredictions     RiskPrediction[]
+  documents           Document[]
+  medicalRecords      MedicalRecord[]
+  prescriptions       Prescription[]
+  payments            Payment[]
+  activityLogs       ActivityLog[]
+
+  @@index([email])
+  @@index([role])
+  @@index([isActive])
+  @@map("users")
+}
+
+model Doctor {
+  id              String   @id @default(uuid())
+  userId          String   @unique @map("user_id")
+  specialization String
+  licenseNumber   String   @map("license_number")
+  yearsOfExperience Int?   @map("years_of_experience")
+  bio             String?
+  isAvailable     Boolean  @default(true) @map("is_available")
+  status          DoctorStatus @default(PENDING) @map("status")
+  departmentId    String?  @map("department_id")
+  licenseDocumentPath String? @map("license_document_path")
+  rejectionReason String?  @map("rejection_reason")
+  approvedAt      DateTime? @map("approved_at")
+  approvedBy      String?  @map("approved_by")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  availability DoctorAvailability[]
+  department  Department?   @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  prescriptions Prescription[]
+  medicalRecords MedicalRecord[]
+
+  @@index([specialization])
+  @@index([isAvailable])
+  @@index([status])
+  @@index([departmentId])
+  @@map("doctors")
+}
+
+model DoctorAvailability {
+  id          String   @id @default(uuid())
+  doctorId    String   @map("doctor_id")
+  dayOfWeek   Int      @map("day_of_week") // 0 = Sunday, 6 = Saturday
+  startTime   String   @map("start_time") // HH:mm format
+  endTime     String   @map("end_time") // HH:mm format
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  doctor Doctor @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+
+  @@unique([doctorId, dayOfWeek, startTime])
+  @@index([doctorId])
+  @@map("doctor_availability")
+}
+
+model Appointment {
+  id            String            @id @default(uuid())
+  patientId     String            @map("patient_id")
+  doctorId      String            @map("doctor_id")
+  appointmentDate DateTime        @map("appointment_date")
+  startTime     String            @map("start_time") // HH:mm format
+  endTime       String            @map("end_time") // HH:mm format
+  status        AppointmentStatus @default(PENDING)
+  notes         String?
+  riskScore     RiskLevel?        @map("risk_score")
+  version       Int               @default(1) // For optimistic locking
+  createdAt     DateTime          @default(now()) @map("created_at")
+  updatedAt     DateTime          @updatedAt @map("updated_at")
+  cancelledAt   DateTime?         @map("cancelled_at")
+
+  // Relations
+  patient User @relation("PatientAppointments", fields: [patientId], references: [id], onDelete: Cascade)
+  doctor  User @relation("DoctorAppointments", fields: [doctorId], references: [id], onDelete: Cascade)
+  medicalRecord MedicalRecord?
+  payment Payment?
+
+  @@unique([doctorId, appointmentDate, startTime])
+  @@index([patientId])
+  @@index([doctorId])
+  @@index([appointmentDate])
+  @@index([status])
+  @@map("appointments")
+}
+
+model RiskPrediction {
+  id                String    @id @default(uuid())
+  patientId         String    @map("patient_id")
+  
+  // Base features (11)
+  age               Float
+  systolicBp        Float     @map("systolic_bp")
+  diastolicBp       Float     @map("diastolic_bp")
+  bloodSugar        Float     @map("blood_sugar")
+  bodyTemp          Float     @map("body_temp")
+  bmi               Float
+  previousComplications Int   @map("previous_complications") // 0 or 1
+  preexistingDiabetes Int     @map("preexisting_diabetes") // 0 or 1
+  gestationalDiabetes Int     @map("gestational_diabetes") // 0 or 1
+  mentalHealth      Int       @map("mental_health") // 0 or 1
+  heartRate         Float     @map("heart_rate")
+  
+  // Derived features (5)
+  bpDiff            Float?    @map("bp_diff")
+  bmiCat            Int?      @map("bmi_cat")
+  highBp            Int?      @map("high_bp")
+  highHr            Int?      @map("high_hr")
+  riskFactors       Int?      @map("risk_factors")
+  
+  // Prediction results
+  riskLevel         RiskLevel
+  confidence        Float
+  probabilities     Json?     // { "Low": 0.95, "High": 0.05 }
+  explanation       String?
+  
+  createdAt         DateTime  @default(now()) @map("created_at")
+
+  // Relations
+  patient User @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  document Document?
+
+  @@index([patientId])
+  @@index([riskLevel])
+  @@index([createdAt])
+  @@map("risk_predictions")
+}
+
+model Document {
+  id                String    @id @default(uuid())
+  patientId         String    @map("patient_id")
+  fileName          String    @map("file_name")
+  filePath          String    @map("file_path")
+  fileType          String    @map("file_type") // pdf, png, jpg
+  fileSize          Int       @map("file_size") // bytes
+  ocrData           String?   @map("ocr_data") // Raw OCR text
+  extractedFeatures Json?     @map("extracted_features") // Extracted features from OCR
+  riskPredictionId  String?    @unique @map("risk_prediction_id")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  patient         User            @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  riskPrediction  RiskPrediction? @relation(fields: [riskPredictionId], references: [id], onDelete: SetNull)
+
+  @@index([patientId])
+  @@index([createdAt])
+  @@map("documents")
+}
+
+model Department {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  doctors     Doctor[]
+
+  @@index([isActive])
+  @@map("departments")
+}
+
+model TreatmentCategory {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@index([isActive])
+  @@map("treatment_categories")
+}
+
+model MedicalRecord {
+  id              String            @id @default(uuid())
+  patientId       String            @map("patient_id")
+  doctorId        String            @map("doctor_id")
+  appointmentId   String?           @unique @map("appointment_id")
+  recordType      MedicalRecordType @map("record_type")
+  diagnosis       String?
+  notes           String?
+  labResults      Json?             @map("lab_results")
+  treatmentPlan   String?           @map("treatment_plan")
+  followUpDate    DateTime?         @map("follow_up_date")
+  attachments     Json?             // Array of file paths
+  createdAt       DateTime          @default(now()) @map("created_at")
+  updatedAt       DateTime          @updatedAt @map("updated_at")
+
+  // Relations
+  patient     User        @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  doctor      Doctor      @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  appointment Appointment? @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
+
+  @@index([patientId])
+  @@index([doctorId])
+  @@index([appointmentId])
+  @@index([recordType])
+  @@index([createdAt])
+  @@map("medical_records")
+}
+
+model Prescription {
+  id            String    @id @default(uuid())
+  patientId     String    @map("patient_id")
+  doctorId      String    @map("doctor_id")
+  appointmentId String?   @map("appointment_id")
+  medications   Json      // Array of { name, dosage, frequency, duration, instructions }
+  notes         String?
+  isActive      Boolean   @default(true) @map("is_active")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  patient     User        @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  doctor      Doctor      @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+
+  @@index([patientId])
+  @@index([doctorId])
+  @@index([appointmentId])
+  @@index([isActive])
+  @@index([createdAt])
+  @@map("prescriptions")
+}
+
+model Payment {
+  id            String        @id @default(uuid())
+  patientId     String        @map("patient_id")
+  appointmentId String?       @unique @map("appointment_id")
+  amount        Float
+  status        PaymentStatus
+  paymentMethod PaymentMethod  @map("payment_method")
+  transactionId String?       @unique @map("transaction_id")
+  invoiceNumber String?       @unique @map("invoice_number")
+  description   String?
+  paidAt        DateTime?     @map("paid_at")
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+
+  // Relations
+  patient     User        @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  appointment Appointment? @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
+
+  @@index([patientId])
+  @@index([appointmentId])
+  @@index([status])
+  @@index([transactionId])
+  @@index([invoiceNumber])
+  @@index([createdAt])
+  @@map("payments")
+}
+
+model ActivityLog {
+  id          String   @id @default(uuid())
+  userId      String?  @map("user_id")
+  action      String   // e.g., "CREATE_APPOINTMENT", "UPDATE_PRESCRIPTION"
+  entityType  String   @map("entity_type") // e.g., "Appointment", "Prescription"
+  entityId    String?  @map("entity_id")
+  details     Json?    // Additional context
+  ipAddress   String?  @map("ip_address")
+  userAgent   String?  @map("user_agent")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  // Relations
+  user       User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([action])
+  @@index([entityType])
+  @@index([createdAt])
+  @@map("activity_logs")
+}
