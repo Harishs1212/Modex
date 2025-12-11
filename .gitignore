@@ -46,7 +46,8 @@ backend/uploads/
 *.sqlite
 
 # Prisma
-backend/prisma/migrations/
+# Migrations should be committed for version control
+# backend/prisma/migrations/
 
 # Python
 *.egg-info/
