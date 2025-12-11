@@ -144,6 +144,8 @@ export class AppointmentService {
     if (userRole === 'PATIENT') {
       where.patientId = userId;
     } else if (userRole === 'DOCTOR') {
+      // Appointments use User.id as doctorId (not Doctor.id)
+      // So we can directly use the userId
       where.doctorId = userId;
     }
 
@@ -235,11 +237,20 @@ export class AppointmentService {
     }
 
     // Check permissions
-    if (
-      userRole !== 'ADMIN' &&
-      appointment.patientId !== userId &&
-      appointment.doctorId !== userId
-    ) {
+    let isAuthorized = false;
+    if (userRole === 'ADMIN') {
+      isAuthorized = true;
+    } else if (userRole === 'PATIENT' && appointment.patientId === userId) {
+      isAuthorized = true;
+    } else if (userRole === 'DOCTOR') {
+      // Appointments use User.id as doctorId (not Doctor.id)
+      // So we can directly compare with userId
+      if (appointment.doctorId === userId) {
+        isAuthorized = true;
+      }
+    }
+    
+    if (!isAuthorized) {
       throw new AppError('Unauthorized to update this appointment', 403);
     }
 
@@ -412,7 +423,15 @@ export class AppointmentService {
     }
 
     // Only doctor or admin can mark as missed
-    if (userRole !== 'ADMIN' && appointment.doctorId !== userId) {
+    if (userRole === 'ADMIN') {
+      // Admin can mark any appointment as missed
+    } else if (userRole === 'DOCTOR') {
+      // Appointments use User.id as doctorId (not Doctor.id)
+      // So we can directly compare with userId
+      if (appointment.doctorId !== userId) {
+        throw new AppError('Unauthorized to mark this appointment as missed', 403);
+      }
+    } else {
       throw new AppError('Unauthorized to mark this appointment as missed', 403);
     }
 

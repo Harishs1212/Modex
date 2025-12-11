@@ -14,6 +14,7 @@ import adminRoutes from './modules/admin/admin.routes';
 import medicalRecordRoutes from './modules/medical-records/medical-record.routes';
 import prescriptionRoutes from './modules/prescriptions/prescription.routes';
 import paymentRoutes from './modules/payments/payment.routes';
+import slotRoutes from './modules/slots/slot.routes';
 
 // Swagger
 import swaggerJsdoc from 'swagger-jsdoc';
@@ -80,6 +81,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/medical-records', medicalRecordRoutes);
 app.use('/api/prescriptions', prescriptionRoutes);
 app.use('/api/payments', paymentRoutes);
+app.use('/api/slots', slotRoutes);
 
 // Error handling
 app.use(notFoundHandler);

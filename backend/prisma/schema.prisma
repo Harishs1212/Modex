@@ -24,6 +24,18 @@ enum AppointmentStatus {
   MISSED
 }
 
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  FAILED
+}
+
+enum AttendanceStatus {
+  PENDING
+  ATTENDED
+  NOT_ATTENDED
+}
+
 enum RiskLevel {
   LOW
   HIGH
@@ -77,6 +89,7 @@ model User {
   // Relations
   patientAppointments Appointment[] @relation("PatientAppointments")
   doctorAppointments Appointment[] @relation("DoctorAppointments")
+  doctorSlots        Slot[]         @relation("DoctorSlots")
   doctorProfile       Doctor?
   riskPredictions     RiskPrediction[]
   documents           Document[]
@@ -139,16 +152,44 @@ model DoctorAvailability {
   @@map("doctor_availability")
 }
 
+model Slot {
+  id            String   @id @default(uuid())
+  doctorId      String   @map("doctor_id")
+  slotDate      DateTime @map("slot_date")
+  startTime     String   @map("start_time") // HH:mm format
+  endTime       String   @map("end_time") // HH:mm format
+  maxCapacity   Int      @default(6) @map("max_capacity")
+  currentBookings Int    @default(0) @map("current_bookings")
+  isActive      Boolean  @default(true) @map("is_active")
+  version       Int      @default(1) // For optimistic locking
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  doctor      User          @relation("DoctorSlots", fields: [doctorId], references: [id], onDelete: Cascade)
+  appointments Appointment[]
+
+  @@unique([doctorId, slotDate, startTime])
+  @@index([doctorId])
+  @@index([slotDate])
+  @@index([isActive])
+  @@map("slots")
+}
+
 model Appointment {
   id            String            @id @default(uuid())
   patientId     String            @map("patient_id")
   doctorId      String            @map("doctor_id")
+  slotId        String?           @map("slot_id")
   appointmentDate DateTime        @map("appointment_date")
   startTime     String            @map("start_time") // HH:mm format
   endTime       String            @map("end_time") // HH:mm format
   status        AppointmentStatus @default(PENDING)
+  bookingStatus BookingStatus     @default(PENDING) @map("booking_status")
+  attendanceStatus AttendanceStatus? @map("attendance_status")
   notes         String?
   riskScore     RiskLevel?        @map("risk_score")
+  isPriority    Boolean           @default(false) @map("is_priority") // High-risk patients
   version       Int               @default(1) // For optimistic locking
   createdAt     DateTime          @default(now()) @map("created_at")
   updatedAt     DateTime          @updatedAt @map("updated_at")
@@ -157,14 +198,17 @@ model Appointment {
   // Relations
   patient User @relation("PatientAppointments", fields: [patientId], references: [id], onDelete: Cascade)
   doctor  User @relation("DoctorAppointments", fields: [doctorId], references: [id], onDelete: Cascade)
+  slot    Slot? @relation(fields: [slotId], references: [id], onDelete: SetNull)
   medicalRecord MedicalRecord?
   payment Payment?
 
-  @@unique([doctorId, appointmentDate, startTime])
   @@index([patientId])
   @@index([doctorId])
+  @@index([slotId])
   @@index([appointmentDate])
   @@index([status])
+  @@index([bookingStatus])
+  @@index([isPriority])
   @@map("appointments")
 }
 

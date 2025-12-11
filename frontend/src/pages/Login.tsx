@@ -16,10 +16,24 @@ export default function Login() {
     setIsLoading(true)
 
     try {
-      await login(email, password)
-      navigate('/dashboard')
+      const response = await login(email, password)
+      // Ensure tokens are stored
+      if (response.accessToken && response.refreshToken) {
+        // Small delay to ensure state updates propagate
+        await new Promise(resolve => setTimeout(resolve, 100))
+        navigate('/dashboard', { replace: true })
+      } else {
+        setError('Login failed: Invalid response from server')
+      }
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Login failed')
+      console.error('Login error:', err)
+      // Handle different error response formats
+      const errorMessage = 
+        err.response?.data?.error || 
+        err.response?.data?.message || 
+        err.message || 
+        'Login failed. Please check your credentials.'
+      setError(errorMessage)
     } finally {
       setIsLoading(false)
     }
@@ -73,6 +87,14 @@ export default function Login() {
           >
             {isLoading ? 'Signing in...' : 'Sign in'}
           </button>
+          <div className="text-center mt-4">
+            <p className="text-sm text-gray-600">
+              Don't have an account?{' '}
+              <a href="/signup" className="font-semibold text-blue-600 hover:text-blue-700">
+                Sign up here
+              </a>
+            </p>
+          </div>
         </form>
       </div>
     </div>

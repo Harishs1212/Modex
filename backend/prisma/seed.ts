@@ -22,6 +22,47 @@ async function main() {
 
   console.log('Created admin user:', admin.email);
 
+  // Create default departments for pregnancy care
+  const departments = [
+    {
+      name: 'Obstetrics & Gynecology',
+      description: 'Specialized care for pregnancy, childbirth, and women\'s reproductive health',
+    },
+    {
+      name: 'Maternal-Fetal Medicine',
+      description: 'High-risk pregnancy care and fetal monitoring',
+    },
+    {
+      name: 'Perinatology',
+      description: 'Care for high-risk pregnancies and complications',
+    },
+    {
+      name: 'Reproductive Endocrinology',
+      description: 'Fertility and hormonal issues related to pregnancy',
+    },
+    {
+      name: 'Neonatology',
+      description: 'Care for newborns, especially premature or high-risk infants',
+    },
+    {
+      name: 'Prenatal Care',
+      description: 'Routine care and monitoring during pregnancy',
+    },
+    {
+      name: 'Postpartum Care',
+      description: 'Care after childbirth and recovery support',
+    },
+  ];
+
+  for (const dept of departments) {
+    await prisma.department.upsert({
+      where: { name: dept.name },
+      update: {},
+      create: dept,
+    });
+    console.log(`Created/Updated department: ${dept.name}`);
+  }
+
   // Create sample doctor
   const doctorPassword = await bcrypt.hash('doctor123', 10);
   const doctorUser = await prisma.user.upsert({
@@ -37,6 +78,11 @@ async function main() {
     },
   });
 
+  // Get Obstetrics & Gynecology department
+  const obgynDept = await prisma.department.findUnique({
+    where: { name: 'Obstetrics & Gynecology' },
+  });
+
   const doctor = await prisma.doctor.upsert({
     where: { userId: doctorUser.id },
     update: {},
@@ -47,6 +93,10 @@ async function main() {
       yearsOfExperience: 10,
       bio: 'Experienced obstetrician specializing in high-risk pregnancies',
       isAvailable: true,
+      status: 'APPROVED',
+      approvedAt: new Date(),
+      approvedBy: admin.id,
+      departmentId: obgynDept?.id,
     },
   });
 
@@ -99,4 +149,3 @@ main()
   .finally(async () => {
     await prisma.$disconnect();
   });
-

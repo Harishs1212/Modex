@@ -22,6 +22,7 @@ export const REDIS_KEYS = {
   appointmentLock: (doctorId: string, slot: string) => `appointment:lock:${doctorId}:${slot}`,
   appointmentPending: (appointmentId: string) => `appointment:pending:${appointmentId}`,
   slotsCache: (doctorId: string, date: string) => `slots:${doctorId}:${date}`,
+  slotBookingLock: (slotId: string) => `slot:lock:${slotId}`,
 } as const;
 
 export const REDIS_TTL = {
@@ -29,6 +30,7 @@ export const REDIS_TTL = {
   appointmentLock: 120, // 2 minutes
   appointmentPending: 120, // 2 minutes
   slotsCache: 300, // 5 minutes
+  slotBookingLock: 120, // 2 minutes
 } as const;
 
 export const SLOT_DURATION = 30; // minutes

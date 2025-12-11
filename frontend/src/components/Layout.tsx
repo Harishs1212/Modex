@@ -3,12 +3,12 @@ import { useAuth } from '../hooks/useAuth'
 import { 
   LayoutDashboard, 
   Stethoscope, 
-  ShieldAlert, 
   LogOut, 
   User, 
   Menu,
   X,
-  Activity
+  Activity,
+  Calendar
 } from 'lucide-react'
 import { useState } from 'react'
 
@@ -24,10 +24,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   }
 
   const navigation = [
-    { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, roles: ['PATIENT', 'DOCTOR', 'ADMIN'] },
+    { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, roles: ['PATIENT', 'ADMIN'] },
+    { name: 'Book Appointment', href: '/book-slot', icon: Calendar, roles: ['PATIENT'] },
     { name: 'Doctor Portal', href: '/doctor-dashboard', icon: Stethoscope, roles: ['DOCTOR', 'ADMIN'] },
-    { name: 'Admin Portal', href: '/admin-dashboard', icon: ShieldAlert, roles: ['ADMIN'] },
-    { name: 'Risk Prediction', href: '/risk-prediction', icon: Activity, roles: ['PATIENT', 'DOCTOR', 'ADMIN'] },
+    { name: 'Risk Prediction', href: '/risk-prediction', icon: Activity, roles: ['PATIENT', 'DOCTOR'] },
   ]
 
   const filteredNavigation = navigation.filter(item => 

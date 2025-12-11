@@ -2,19 +2,23 @@ import { useQuery } from '@tanstack/react-query'
 import { appointmentsApi } from '../api/appointments.api'
 import { riskApi } from '../api/risk.api'
 import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../hooks/useAuth'
 import { Activity, Calendar, Clock, AlertTriangle, CheckCircle, FileText, Shield } from 'lucide-react'
 
 export default function PatientDashboard() {
   const navigate = useNavigate()
+  const { user } = useAuth()
 
   const { data: appointments } = useQuery({
     queryKey: ['appointments'],
     queryFn: () => appointmentsApi.getAppointments({ limit: 5 }),
   })
 
+  // Only fetch risk history if user is a PATIENT
   const { data: riskHistory } = useQuery({
     queryKey: ['risk-history'],
     queryFn: () => riskApi.getHistory(undefined, 1, 5),
+    enabled: user?.role === 'PATIENT', // Only fetch if user is a patient
   })
 
   const latestRisk = riskHistory?.predictions[0]
@@ -33,13 +37,24 @@ export default function PatientDashboard() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-900">Patient Overview</h1>
-        <button
-          onClick={() => navigate('/risk-prediction')}
-          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-        >
-          <Activity className="w-4 h-4 mr-2" />
-          New Risk Assessment
-        </button>
+        {user?.role === 'PATIENT' && (
+          <div className="flex gap-3">
+            <button
+              onClick={() => navigate('/book-slot')}
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+            >
+              <Calendar className="w-4 h-4 mr-2" />
+              Book Appointment
+            </button>
+            <button
+              onClick={() => navigate('/risk-prediction')}
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              <Activity className="w-4 h-4 mr-2" />
+              New Risk Assessment
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">

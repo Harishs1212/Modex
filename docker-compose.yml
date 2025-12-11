@@ -40,7 +40,7 @@ services:
       REDIS_PORT: 6379
       ML_SERVICE_URL: http://ml-service:8000
       PORT: 3000
-      NODE_ENV: production
+      NODE_ENV: development
       JWT_SECRET: your-super-secret-jwt-key-change-in-production
       JWT_ACCESS_EXPIRY: 15m
       JWT_REFRESH_EXPIRY: 7d

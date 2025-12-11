@@ -79,6 +79,16 @@ export const appointmentsApi = {
     return response.data
   },
 
+  acceptAppointment: async (id: string) => {
+    const response = await apiClient.post<{ appointment: Appointment; message: string }>(`/appointments/${id}/accept`)
+    return response.data
+  },
+
+  declineAppointment: async (id: string, reason?: string) => {
+    const response = await apiClient.post<{ appointment: Appointment; message: string }>(`/appointments/${id}/decline`, { reason })
+    return response.data
+  },
+
   getSlots: async (doctorId: string, date: string) => {
     const response = await apiClient.get<{ slots: TimeSlot[] }>('/appointments/slots', {
       params: { doctorId, date },

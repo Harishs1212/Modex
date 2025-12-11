@@ -1,280 +1,385 @@
-# NeoCareSync - Deployment Guide
+# NeoCareSync Deployment Guide
 
-## 🎯 Production Deployment Architecture
+This guide covers deploying NeoCareSync to production using modern cloud platforms.
 
+## Overview
+
+- **Backend**: Railway or Render
+- **Database**: Supabase PostgreSQL
+- **Frontend**: Vercel
+- **ML Service**: Railway
+- **Redis**: Upstash (serverless)
+
+## Prerequisites
+
+- GitHub repository with your code
+- Accounts on:
+  - Railway (or Render) for backend/ML service
+  - Supabase for PostgreSQL
+  - Vercel for frontend
+  - Upstash for Redis
+
+## 1. Database Setup (Supabase)
+
+### Step 1: Create Supabase Project
+
+1. Go to [supabase.com](https://supabase.com) and create a new project
+2. Note your project URL and API keys
+
+### Step 2: Get Connection String
+
+1. Go to **Settings** → **Database**
+2. Copy the **Connection string** (URI format)
+3. Format: `postgresql://postgres:[YOUR-PASSWORD]@db.[PROJECT-REF].supabase.co:5432/postgres`
+
+### Step 3: Run Migrations
+
+```bash
+# Set DATABASE_URL environment variable
+export DATABASE_URL="postgresql://postgres:[YOUR-PASSWORD]@db.[PROJECT-REF].supabase.co:5432/postgres"
+
+# Run migrations
+cd backend
+npx prisma migrate deploy
+
+# Generate Prisma Client
+npx prisma generate
 ```
-┌─────────────┐
-│   Vercel    │  Frontend (React)
-│  (Static)   │  https://your-app.vercel.app
-└──────┬──────┘
-       │
-       ▼
-┌─────────────┐
-│  Railway/   │  Backend API (Express)
-│   Render    │  https://api.your-app.com
-└──────┬──────┘
-       │
-       ├──► Supabase PostgreSQL (Database)
-       ├──► Upstash Redis (Cache)
-       └──► Railway ML Service (FastAPI)
+
+### Step 4: Seed Database (Optional)
+
+```bash
+npx prisma db seed
 ```
 
----
+## 2. Redis Setup (Upstash)
 
-## 📦 Step-by-Step Deployment
+### Step 1: Create Upstash Redis Database
 
-### 1. Database Setup (Supabase)
+1. Go to [upstash.com](https://upstash.com) and create a new Redis database
+2. Choose **Regional** or **Global** (recommended: Regional for lower latency)
+3. Note your Redis endpoint and password
 
-1. **Create Project:**
-   - Go to [supabase.com](https://supabase.com)
-   - Click "New Project"
-   - Fill in project details
-   - Wait 2-3 minutes for provisioning
+### Step 2: Get Connection Details
 
-2. **Get Connection String:**
-   - Settings → Database → Connection string
-   - Copy the URI format
-   - Replace `[YOUR-PASSWORD]` with your password
+- **Host**: `[YOUR-ENDPOINT].upstash.io`
+- **Port**: `6379` (or custom port)
+- **Password**: Your Redis password
 
-3. **Run Migrations:**
-   ```bash
-   # Set DATABASE_URL
-   export DATABASE_URL="postgresql://postgres:[PASSWORD]@db.[PROJECT].supabase.co:5432/postgres"
-   
-   # Run migrations
-   cd backend
-   npx prisma migrate deploy
-   ```
+## 3. Backend Deployment (Railway)
 
----
+### Step 1: Create Railway Project
 
-### 2. Redis Setup (Upstash)
+1. Go to [railway.app](https://railway.app) and create a new project
+2. Click **New** → **GitHub Repo** and select your repository
+3. Select the `backend` folder as the root directory
 
-1. **Create Database:**
-   - Go to [upstash.com](https://upstash.com)
-   - Create Redis database
-   - Choose region closest to your backend
+### Step 2: Configure Environment Variables
 
-2. **Get Credentials:**
-   - Copy REST URL, Host, Port, Password
-   - Save for backend configuration
+Add the following environment variables in Railway:
 
----
+```env
+# Database
+DATABASE_URL=postgresql://postgres:[PASSWORD]@db.[PROJECT-REF].supabase.co:5432/postgres
 
-### 3. Backend Deployment (Railway)
+# Redis
+REDIS_HOST=[YOUR-ENDPOINT].upstash.io
+REDIS_PORT=6379
+REDIS_PASSWORD=[YOUR-REDIS-PASSWORD]
 
-1. **Create Railway Account:**
-   - Go to [railway.app](https://railway.app)
-   - Sign up with GitHub
+# JWT
+JWT_SECRET=your-super-secret-jwt-key-min-32-characters-long
+JWT_ACCESS_EXPIRY=15m
+JWT_REFRESH_EXPIRY=7d
 
-2. **Create New Project:**
-   - Click "New Project"
-   - Select "Deploy from GitHub repo"
-   - Choose your repository
-   - Select `backend` folder as root
+# ML Service
+ML_SERVICE_URL=https://[YOUR-ML-SERVICE].railway.app
 
-3. **Configure Environment Variables:**
-   ```
-   DATABASE_URL=postgresql://postgres:[PASSWORD]@db.[PROJECT].supabase.co:5432/postgres
-   REDIS_HOST=your-upstash-host.upstash.io
-   REDIS_PORT=6379
-   REDIS_PASSWORD=your-upstash-password
-   ML_SERVICE_URL=https://your-ml-service.railway.app
-   JWT_SECRET=generate-strong-random-secret-min-32-chars
-   JWT_ACCESS_EXPIRY=15m
-   JWT_REFRESH_EXPIRY=7d
-   PORT=3000
-   NODE_ENV=production
-   FRONTEND_URL=https://your-frontend.vercel.app
-   MAX_FILE_SIZE=10485760
-   UPLOAD_DIR=./uploads
-   ```
+# Frontend
+FRONTEND_URL=https://[YOUR-FRONTEND].vercel.app
 
-4. **Configure Build Settings:**
-   - Build Command: `npm run build`
-   - Start Command: `npm start`
-   - Root Directory: `backend`
+# Server
+PORT=3000
+NODE_ENV=production
 
-5. **Deploy:**
-   - Railway will auto-deploy on push
-   - Get your backend URL (e.g., `https://backend-production.up.railway.app`)
+# File Upload
+MAX_FILE_SIZE=10485760
+UPLOAD_DIR=./uploads
+```
 
----
+### Step 3: Configure Build Settings
 
-### 4. ML Service Deployment (Railway)
+- **Build Command**: `npm install && npm run build`
+- **Start Command**: `npm start`
+- **Root Directory**: `backend`
 
-1. **Create New Service:**
-   - In same Railway project, click "New"
-   - Select "GitHub Repo"
-   - Choose `ml-service` folder
+### Step 4: Deploy
 
-2. **Configure Environment:**
-   ```
-   PORT=8000
-   ```
+1. Railway will automatically detect your `package.json` and deploy
+2. Wait for the build to complete
+3. Your backend will be available at `https://[YOUR-PROJECT].railway.app`
 
-3. **Configure Build:**
-   - Build Command: `pip install -r requirements.txt`
-   - Start Command: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
-   - Root Directory: `ml-service`
+### Step 5: Run Migrations
 
-4. **Deploy:**
-   - Get ML service URL
-   - Update `ML_SERVICE_URL` in backend environment
+After deployment, run migrations:
 
----
+```bash
+# SSH into Railway container or use Railway CLI
+railway run npx prisma migrate deploy
+```
 
-### 5. Frontend Deployment (Vercel)
+Or use Railway's web terminal to run:
+```bash
+npx prisma migrate deploy
+```
 
-1. **Create Vercel Account:**
-   - Go to [vercel.com](https://vercel.com)
-   - Sign up with GitHub
+### Alternative: Deploy to Render
 
-2. **Import Project:**
-   - Click "Add New Project"
-   - Import your GitHub repository
-   - Select `frontend` folder
+1. Go to [render.com](https://render.com) and create a new **Web Service**
+2. Connect your GitHub repository
+3. Configure:
+   - **Build Command**: `cd backend && npm install && npm run build`
+   - **Start Command**: `cd backend && npm start`
+   - **Environment**: Node
+4. Add the same environment variables as above
+5. Deploy
 
-3. **Configure Environment Variables:**
-   ```
-   VITE_API_URL=https://your-backend.railway.app
-   ```
+## 4. ML Service Deployment (Railway)
 
-4. **Configure Build:**
-   - Framework Preset: Vite
-   - Build Command: `npm run build`
-   - Output Directory: `dist`
-   - Install Command: `npm install`
+### Step 1: Create Railway Project
 
-5. **Deploy:**
-   - Click "Deploy"
-   - Get your frontend URL
+1. Create a new service in Railway
+2. Select the `ml-service` folder as the root directory
 
----
+### Step 2: Configure Environment Variables
 
-## 🔄 Update Backend with Frontend URL
+```env
+PORT=8000
+```
 
-After frontend is deployed, update backend CORS:
+### Step 3: Configure Build Settings
 
-1. Go to Railway backend service
-2. Update environment variable:
-   ```
-   FRONTEND_URL=https://your-frontend.vercel.app
-   ```
-3. Redeploy backend
+- **Build Command**: `pip install -r requirements.txt`
+- **Start Command**: `uvicorn app.main:app --host 0.0.0.0 --port 8000`
+- **Root Directory**: `ml-service`
 
----
+### Step 4: Deploy
 
-## ✅ Post-Deployment Checklist
+1. Railway will automatically deploy your ML service
+2. Note the deployment URL: `https://[YOUR-ML-SERVICE].railway.app`
 
-- [ ] Backend is accessible and healthy
-- [ ] ML service responds to `/health` endpoint
-- [ ] Frontend loads and connects to backend
-- [ ] Database migrations applied successfully
-- [ ] Redis connection working
-- [ ] API documentation accessible at `/api-docs`
-- [ ] User registration works
-- [ ] User login works
-- [ ] Risk prediction works
-- [ ] Document upload works
-- [ ] Appointment booking works
+### Step 5: Update Backend Environment Variable
+
+Update the `ML_SERVICE_URL` in your backend service with the ML service URL.
+
+## 5. Frontend Deployment (Vercel)
+
+### Step 1: Create Vercel Project
+
+1. Go to [vercel.com](https://vercel.com) and create a new project
+2. Import your GitHub repository
+3. Select the `frontend` folder as the root directory
+
+### Step 2: Configure Build Settings
+
+- **Framework Preset**: Vite
+- **Build Command**: `npm run build`
+- **Output Directory**: `dist`
+- **Install Command**: `npm install`
+
+### Step 3: Configure Environment Variables
+
+Add the following environment variable:
+
+```env
+VITE_API_URL=https://[YOUR-BACKEND].railway.app
+```
+
+**Important**: Vite requires the `VITE_` prefix for environment variables to be exposed to the client.
+
+### Step 4: Deploy
+
+1. Click **Deploy**
+2. Vercel will build and deploy your frontend
+3. Your frontend will be available at `https://[YOUR-PROJECT].vercel.app`
+
+### Step 5: Update Backend CORS
+
+Update the `FRONTEND_URL` environment variable in your backend with your Vercel deployment URL.
+
+## 6. Environment Variables Summary
+
+### Backend (Railway/Render)
+
+```env
+DATABASE_URL=postgresql://postgres:[PASSWORD]@db.[PROJECT-REF].supabase.co:5432/postgres
+REDIS_HOST=[ENDPOINT].upstash.io
+REDIS_PORT=6379
+REDIS_PASSWORD=[PASSWORD]
+JWT_SECRET=[MIN-32-CHARACTERS]
+JWT_ACCESS_EXPIRY=15m
+JWT_REFRESH_EXPIRY=7d
+ML_SERVICE_URL=https://[ML-SERVICE].railway.app
+FRONTEND_URL=https://[FRONTEND].vercel.app
+PORT=3000
+NODE_ENV=production
+MAX_FILE_SIZE=10485760
+UPLOAD_DIR=./uploads
+```
+
+### Frontend (Vercel)
+
+```env
+VITE_API_URL=https://[BACKEND].railway.app
+```
+
+### ML Service (Railway)
+
+```env
+PORT=8000
+```
+
+## 7. Post-Deployment Checklist
+
+- [ ] Database migrations completed
+- [ ] Backend health check: `https://[BACKEND].railway.app/health`
+- [ ] ML service health check: `https://[ML-SERVICE].railway.app/health`
+- [ ] Frontend loads correctly
+- [ ] API documentation accessible: `https://[BACKEND].railway.app/api-docs`
+- [ ] Test user login
+- [ ] Test slot booking
+- [ ] Test risk prediction
+- [ ] Verify Redis connection (check logs)
+- [ ] Verify database connection (check logs)
 - [ ] CORS configured correctly
+- [ ] Environment variables set correctly
 
----
+## 8. Monitoring & Logs
 
-## 🔍 Testing Production
+### Railway
 
-### Test Backend:
-```bash
-curl https://your-backend.railway.app/health
-```
-
-### Test ML Service:
-```bash
-curl https://your-ml-service.railway.app/health
-```
-
-### Test Frontend:
-- Visit your Vercel URL
-- Try logging in
-- Test risk prediction
-- Test appointment booking
-
----
-
-## 📊 Monitoring
-
-### Railway:
 - View logs in Railway dashboard
+- Set up alerts for deployment failures
 - Monitor resource usage
-- Set up alerts
 
-### Vercel:
-- View analytics
-- Monitor performance
-- Check build logs
+### Vercel
 
-### Supabase:
-- Monitor database usage
-- Check connection pool
-- View query performance
+- View deployment logs in Vercel dashboard
+- Monitor function execution times
+- Set up analytics
 
----
+### Supabase
 
-## 🔐 Security Checklist
+- Monitor database performance in Supabase dashboard
+- Set up connection pooling if needed
+- Review query performance
 
-- [ ] JWT_SECRET is strong and unique
-- [ ] Database password is secure
-- [ ] Redis password is set
-- [ ] CORS is configured for production domain only
-- [ ] Environment variables are not committed to git
-- [ ] File upload size limits are set
-- [ ] Rate limiting is enabled
-- [ ] HTTPS is enabled (automatic on Vercel/Railway)
+### Upstash
 
----
+- Monitor Redis usage in Upstash dashboard
+- Set up alerts for high memory usage
+- Review command statistics
 
-## 🆘 Troubleshooting
+## 9. Troubleshooting
 
-### Backend won't start:
-- Check environment variables
-- Verify database connection
-- Check build logs
+### Backend Issues
 
-### ML service errors:
-- Verify model file exists
-- Check Python dependencies
-- Review service logs
+**Problem**: Backend fails to start
+- Check environment variables are set correctly
+- Verify database connection string
+- Check Redis connection details
+- Review build logs for errors
 
-### Frontend can't connect:
-- Verify VITE_API_URL is correct
+**Problem**: Migrations fail
+- Ensure `DATABASE_URL` is correct
+- Check database permissions
+- Verify Prisma schema is up to date
+
+### Frontend Issues
+
+**Problem**: Frontend can't connect to backend
+- Verify `VITE_API_URL` is set correctly
 - Check CORS settings in backend
-- Verify backend is accessible
+- Ensure backend is running and accessible
 
----
+**Problem**: Build fails
+- Check Node.js version compatibility
+- Review build logs for dependency issues
+- Verify all environment variables are set
 
-## 📝 Environment Variables Summary
+### ML Service Issues
 
-### Backend (Railway):
-```
-DATABASE_URL, REDIS_HOST, REDIS_PORT, REDIS_PASSWORD,
-ML_SERVICE_URL, JWT_SECRET, JWT_ACCESS_EXPIRY, JWT_REFRESH_EXPIRY,
-PORT, NODE_ENV, FRONTEND_URL, MAX_FILE_SIZE, UPLOAD_DIR
-```
+**Problem**: ML service fails to start
+- Check Python version (3.11+)
+- Verify all dependencies in `requirements.txt`
+- Check port configuration
 
-### ML Service (Railway):
-```
-PORT
-```
+**Problem**: Backend can't reach ML service
+- Verify `ML_SERVICE_URL` is correct
+- Check ML service health endpoint
+- Review network/firewall settings
 
-### Frontend (Vercel):
-```
-VITE_API_URL
-```
+## 10. Scaling Considerations
 
----
+### Database (Supabase)
 
-## 🎉 You're Done!
+- Enable connection pooling for high traffic
+- Set up read replicas for analytics queries
+- Monitor query performance and optimize
 
-Your application should now be live and accessible. Share the frontend URL with users!
+### Redis (Upstash)
 
+- Upgrade to higher tier for more memory
+- Use Redis Cluster for high availability
+- Monitor memory usage and optimize caching
+
+### Backend (Railway/Render)
+
+- Scale horizontally by adding more instances
+- Use load balancer for multiple instances
+- Monitor CPU and memory usage
+
+### Frontend (Vercel)
+
+- Vercel automatically scales
+- Use Edge Functions for better performance
+- Enable CDN caching
+
+## 11. Security Best Practices
+
+1. **Environment Variables**: Never commit secrets to Git
+2. **JWT Secret**: Use a strong, random secret (min 32 characters)
+3. **Database**: Use strong passwords and enable SSL
+4. **CORS**: Restrict to your frontend domain only
+5. **Rate Limiting**: Already implemented in backend
+6. **HTTPS**: All services should use HTTPS (automatic with Railway/Vercel)
+7. **File Uploads**: Validate file types and sizes
+8. **Input Validation**: All endpoints use Zod validation
+
+## 12. Backup & Recovery
+
+### Database Backups
+
+- Supabase provides automatic daily backups
+- Manual backups: Use `pg_dump` or Supabase dashboard
+
+### Redis Backups
+
+- Upstash provides automatic backups
+- Export data if needed for migration
+
+### Code Backups
+
+- All code is in Git repository
+- Tag releases for easy rollback
+
+## Deployment URLs Example
+
+After deployment, your URLs will look like:
+
+- **Frontend**: `https://neocaresync.vercel.app`
+- **Backend**: `https://neocaresync-backend.railway.app`
+- **ML Service**: `https://neocaresync-ml.railway.app`
+- **API Docs**: `https://neocaresync-backend.railway.app/api-docs`
+
+Update these URLs in your environment variables accordingly.

@@ -11,6 +11,10 @@ import {
   UpdateDepartmentSchema,
   CreateTreatmentCategorySchema,
   UpdateTreatmentCategorySchema,
+  UpdateAttendanceSchema,
+  UpdateRiskLevelSchema,
+  CreateDoctorProfileSchema,
+  SetDoctorSlotAvailabilitySchema,
 } from './admin.types';
 
 const router = Router();
@@ -216,6 +220,78 @@ router.get('/analytics/appointments', adminController.getAppointmentStats);
  *     tags: [Admin]
  */
 router.get('/analytics/revenue', adminController.getRevenueStats);
+
+// ========== ATTENDANCE & RISK MANAGEMENT ==========
+/**
+ * @swagger
+ * /api/admin/appointments/:appointmentId/attendance:
+ *   patch:
+ *     summary: Mark patient attendance (Admin only)
+ *     tags: [Admin]
+ */
+router.patch(
+  '/appointments/:appointmentId/attendance',
+  validate(UpdateAttendanceSchema),
+  adminController.markAttendance
+);
+
+/**
+ * @swagger
+ * /api/admin/patients/:patientId/risk-level:
+ *   patch:
+ *     summary: Update patient risk level (Admin only)
+ *     tags: [Admin]
+ */
+router.patch(
+  '/patients/:patientId/risk-level',
+  validate(UpdateRiskLevelSchema),
+  adminController.updatePatientRiskLevel
+);
+
+/**
+ * @swagger
+ * /api/admin/slots/:slotId/bookings:
+ *   get:
+ *     summary: Get all bookings for a slot (Admin only)
+ *     tags: [Admin]
+ */
+router.get('/slots/:slotId/bookings', adminController.getSlotBookings);
+
+// ========== DOCTOR PROFILE MANAGEMENT ==========
+/**
+ * @swagger
+ * /api/admin/specializations:
+ *   get:
+ *     summary: Get list of available specializations (Admin only)
+ *     tags: [Admin]
+ */
+router.get('/specializations', adminController.getSpecializations);
+
+/**
+ * @swagger
+ * /api/admin/doctors/profile:
+ *   post:
+ *     summary: Create doctor profile (Admin only)
+ *     tags: [Admin]
+ */
+router.post(
+  '/doctors/profile',
+  validate(CreateDoctorProfileSchema),
+  adminController.createDoctorProfile
+);
+
+/**
+ * @swagger
+ * /api/admin/doctors/slot-availability:
+ *   post:
+ *     summary: Set doctor slot availability for specific dates (Admin only)
+ *     tags: [Admin]
+ */
+router.post(
+  '/doctors/slot-availability',
+  validate(SetDoctorSlotAvailabilitySchema),
+  adminController.setDoctorSlotAvailability
+);
 
 export default router;
 

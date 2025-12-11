@@ -66,6 +66,11 @@ export class UserService {
       throw new AppError('Invalid email or password', 401);
     }
 
+    // Check if user is active
+    if (user.isActive === false) {
+      throw new AppError('Account is deactivated. Please contact administrator.', 403);
+    }
+
     // Verify password
     const isValid = await bcrypt.compare(data.password, user.passwordHash);
 

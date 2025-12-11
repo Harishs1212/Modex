@@ -20,13 +20,16 @@ export function useAuth() {
     } else {
       setIsLoading(false)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const loadUser = async () => {
     try {
+      setIsLoading(true)
       const profile = await authApi.getProfile()
       setUser(profile)
     } catch (error) {
+      console.error('Failed to load user profile:', error)
       localStorage.removeItem('accessToken')
       localStorage.removeItem('refreshToken')
       setUser(null)
@@ -39,6 +42,7 @@ export function useAuth() {
     const response = await authApi.login({ email, password })
     localStorage.setItem('accessToken', response.accessToken)
     localStorage.setItem('refreshToken', response.refreshToken)
+    // Update user state immediately - React will batch this
     setUser(response.user)
     return response
   }

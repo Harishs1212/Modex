@@ -26,6 +26,11 @@ router.get(
 );
 
 router.get(
+  '/available',
+  doctorController.getAvailableDoctorsForDate.bind(doctorController)
+);
+
+router.get(
   '/:id',
   doctorController.getDoctorById.bind(doctorController)
 );

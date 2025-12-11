@@ -55,6 +55,7 @@ export class AppointmentController {
   }
 
   async acceptAppointment(req: AuthRequest, res: Response): Promise<void> {
+    // Check if user is a doctor
     const doctor = await prisma.doctor.findUnique({
       where: { userId: req.userId! },
     });
@@ -64,9 +65,10 @@ export class AppointmentController {
       return;
     }
 
+    // Use userId (which is doctorId in appointments table)
     const appointment = await appointmentService.acceptAppointment(
       req.params.id,
-      doctor.id
+      req.userId!
     );
     res.json({
       message: 'Appointment accepted successfully',
@@ -75,6 +77,7 @@ export class AppointmentController {
   }
 
   async declineAppointment(req: AuthRequest, res: Response): Promise<void> {
+    // Check if user is a doctor
     const doctor = await prisma.doctor.findUnique({
       where: { userId: req.userId! },
     });
@@ -84,10 +87,11 @@ export class AppointmentController {
       return;
     }
 
+    // Use userId (which is doctorId in appointments table)
     const appointment = await appointmentService.declineAppointment(
       req.params.id,
-      doctor.id,
-      req.body.reason
+      req.userId!,
+      req.body?.reason
     );
     res.json({
       message: 'Appointment declined successfully',

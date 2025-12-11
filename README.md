@@ -1,36 +1,83 @@
-# NeoCareSync - High Risk Pregnancy Monitoring System
+# NeoCareSync — High Risk Pregnancy Monitoring System with Smart Appointment Scheduling
 
-A complete full-stack application for high-risk pregnancy monitoring with ML-powered risk prediction, smart appointment scheduling, and document-based OCR feature extraction.
+A comprehensive full-stack healthcare application designed for monitoring high-risk pregnancies with ML-powered risk prediction, intelligent appointment scheduling, and OCR-based document processing.
 
-## Architecture
+## Project Overview
 
-- **Backend**: Node.js + Express + TypeScript + Prisma + PostgreSQL + Redis
-- **Frontend**: React + TypeScript + Tailwind CSS + React Query
-- **ML Service**: FastAPI + Python + scikit-learn
-- **Database**: PostgreSQL (Supabase)
-- **Cache**: Redis (Upstash)
-- **Containerization**: Docker + Docker Compose
+NeoCareSync is a production-ready healthcare management system that combines advanced machine learning capabilities with a robust appointment scheduling engine. The system helps healthcare providers identify high-risk pregnancies early through predictive analytics and ensures efficient appointment management with concurrency protection.
+
+### Key Capabilities
+
+- **ML-Powered Risk Prediction**: Uses scikit-learn models to predict pregnancy risk levels (Low/High) based on 11 base features and 5 derived features
+- **Smart Appointment Scheduling**: Redis-backed distributed locking prevents double-booking with 2-minute expiry windows
+- **OCR Document Processing**: Extracts medical features from uploaded documents (PDF, PNG, JPG) using Tesseract OCR
+- **Role-Based Access Control**: Three-tier access system (Admin, Doctor, Patient) with JWT authentication
+- **Real-Time Analytics**: Dashboard analytics for appointments, revenue, and patient trends
 
 ## Features
 
-- User authentication with JWT (access + refresh tokens)
-- Role-based access control (Patient, Doctor, Admin)
-- Appointment scheduling with concurrency protection
-- ML-powered risk prediction (Low/High)
-- OCR-based document feature extraction
-- Risk trend visualization
-- Redis caching for performance
-- Swagger API documentation
+### Admin Features
 
-## Prerequisites
+- **Doctor Management**: Create, approve, reject, or suspend doctor profiles
+- **Slot Management**: Create, update, and delete appointment slots with capacity management
+- **Analytics Dashboard**: View appointment statistics, revenue reports, and system metrics
+- **User Management**: Create and manage users across all roles
+- **Attendance Tracking**: Mark patient attendance for appointments
+- **Department & Category Management**: Organize doctors and treatments
 
-- Docker and Docker Compose
-- Node.js 20+ (for local development)
-- Python 3.11+ (for local ML service development)
+### Doctor Features
 
-## 🚀 Quick Start
+- **Dashboard**: View upcoming appointments, patient history, and slot availability
+- **Appointment Management**: Accept, decline, complete, or mark appointments as missed
+- **Slot Availability**: Set weekly availability patterns and create custom slots
+- **Risk Assessment**: View patient risk predictions and medical records
+- **Prescription Management**: Create and manage patient prescriptions
 
-### Option 1: Local Development (Docker)
+### Patient Features
+
+- **Slot Booking**: Browse available slots by doctor and date, book appointments with concurrency protection
+- **Risk Prediction**: Submit manual health data or upload documents for OCR-based risk assessment
+- **Document Upload**: Upload medical documents (PDF, PNG, JPG) for automated feature extraction
+- **Appointment History**: View past and upcoming appointments with status tracking
+- **Medical Records**: Access consultation notes, lab results, and treatment plans
+
+## Tech Stack
+
+### Backend
+- **Runtime**: Node.js 20+
+- **Framework**: Express.js
+- **Language**: TypeScript
+- **ORM**: Prisma
+- **Database**: PostgreSQL (Supabase)
+- **Cache**: Redis (Upstash)
+- **Authentication**: JWT (access + refresh tokens)
+- **Validation**: Zod
+- **Documentation**: Swagger/OpenAPI
+
+### Frontend
+- **Framework**: React 18
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS
+- **Build Tool**: Vite
+- **State Management**: React Query
+- **HTTP Client**: Axios
+
+### ML Service
+- **Framework**: FastAPI
+- **Language**: Python 3.11+
+- **ML Library**: scikit-learn
+- **OCR**: Tesseract OCR
+- **Server**: Uvicorn
+
+### Infrastructure
+- **Containerization**: Docker + Docker Compose
+- **Database**: Supabase PostgreSQL (serverless)
+- **Cache**: Upstash Redis (serverless)
+- **Deployment**: Railway (backend/ML), Vercel (frontend)
+
+## How to Run Locally
+
+### Option 1: Docker Compose (Recommended)
 
 1. **Start all services:**
    ```bash
@@ -57,15 +104,9 @@ A complete full-stack application for high-risk pregnancy monitoring with ML-pow
    - Email: `admin@neocaresync.com`
    - Password: `admin123`
 
-### Option 2: Production Setup (Supabase)
+### Option 2: Local Development (without Docker)
 
-See [SETUP.md](SETUP.md) for detailed instructions on setting up with Supabase cloud database.
-
-For deployment guide, see [DEPLOYMENT.md](DEPLOYMENT.md).
-
-## Local Development (without Docker)
-
-### Backend
+#### Backend Setup
 
 ```bash
 cd backend
@@ -75,7 +116,7 @@ npx prisma migrate dev
 npm run dev
 ```
 
-### ML Service
+#### ML Service Setup
 
 ```bash
 cd ml-service
@@ -83,7 +124,7 @@ pip install -r requirements.txt
 uvicorn app.main:app --reload --port 8000
 ```
 
-### Frontend
+#### Frontend Setup
 
 ```bash
 cd frontend
@@ -91,58 +132,81 @@ npm install
 npm run dev
 ```
 
-## API Documentation
+## Environment Variables
 
-Swagger documentation is available at `/api-docs` when the backend is running.
+### Backend (.env)
 
-## 📚 Documentation
+```env
+# Database
+DATABASE_URL=postgresql://user:password@host:5432/neocaresync?schema=public
 
-- **[SETUP.md](SETUP.md)** - Complete setup guide (local & Supabase)
-- **[DEPLOYMENT.md](DEPLOYMENT.md)** - Production deployment guide
+# Redis
+REDIS_HOST=localhost
+REDIS_PORT=6379
+REDIS_PASSWORD=
 
-## Deployment
+# JWT
+JWT_SECRET=your-super-secret-jwt-key-change-in-production
+JWT_ACCESS_EXPIRY=15m
+JWT_REFRESH_EXPIRY=7d
 
-### Backend (Railway/Render)
+# ML Service
+ML_SERVICE_URL=http://localhost:8000
 
-1. Set environment variables:
-   - `DATABASE_URL`
-   - `REDIS_HOST`, `REDIS_PORT`, `REDIS_PASSWORD`
-   - `ML_SERVICE_URL`
-   - `JWT_SECRET`
-   - `FRONTEND_URL`
+# Frontend
+FRONTEND_URL=http://localhost:5173
 
-2. Build command: `npm run build`
-3. Start command: `npm start`
+# Server
+PORT=3000
+NODE_ENV=development
 
-### Frontend (Vercel)
+# File Upload
+MAX_FILE_SIZE=10485760
+UPLOAD_DIR=./uploads
+```
 
-1. Set environment variable: `VITE_API_URL`
-2. Build command: `npm run build`
-3. Output directory: `dist`
+### Frontend (.env)
 
-### ML Service (Railway)
+```env
+VITE_API_URL=http://localhost:3000
+```
 
-1. Build command: `pip install -r requirements.txt`
-2. Start command: `uvicorn app.main:app --host 0.0.0.0 --port 8000`
+### ML Service (.env)
 
-### Database
+```env
+PORT=8000
+```
 
-- Use Supabase PostgreSQL (serverless)
-- Run migrations: `npx prisma migrate deploy`
-
-### Redis
-
-- Use Upstash Redis (serverless)
-- Configure connection in backend environment variables
-
-## Project Structure
+## Folder Structure
 
 ```
 Modex/
-├── backend/          # Express.js API Gateway
-├── frontend/         # React TypeScript Frontend
-├── ml-service/       # FastAPI ML Microservice
-└── docker-compose.yml
+├── backend/              # Express.js API Gateway
+│   ├── prisma/          # Database schema and migrations
+│   ├── src/
+│   │   ├── config/      # Configuration files
+│   │   ├── middleware/  # Auth, validation, error handling
+│   │   ├── modules/     # Feature modules (admin, appointments, slots, risk, etc.)
+│   │   └── utils/       # Utilities (logger, redis client, ML client)
+│   └── Dockerfile
+│
+├── frontend/            # React TypeScript Frontend
+│   ├── src/
+│   │   ├── api/         # API client functions
+│   │   ├── components/ # Reusable components
+│   │   ├── hooks/       # Custom React hooks
+│   │   ├── pages/       # Page components
+│   │   └── styles/      # Global styles
+│   └── Dockerfile
+│
+├── ml-service/          # FastAPI ML Microservice
+│   ├── app/
+│   │   ├── models/      # ML model predictor
+│   │   └── utils/       # Feature engineering
+│   ├── pregnancy_risk_model.pkl
+│   └── Dockerfile
+│
+└── docker-compose.yml   # Docker Compose configuration
 ```
 
 ## Key Features Implementation
@@ -167,32 +231,19 @@ Document upload → Tesseract OCR → Feature extraction → ML prediction:
 - Appointment locks: 2 minutes TTL
 - Available slots: 5 minutes TTL
 
-## 📄 Documentation Files
+## API Documentation
 
-- **[QUICK_START.md](QUICK_START.md)** - Get started in 5 minutes
-- **[SETUP.md](SETUP.md)** - Complete setup guide (local & Supabase)
-- **[DEPLOYMENT.md](DEPLOYMENT.md)** - Production deployment guide
-- **[TECHNICAL_WRITEUP.md](TECHNICAL_WRITEUP.md)** - Technical architecture and implementation details
-- **[PROJECT_SUMMARY.md](PROJECT_SUMMARY.md)** - Project overview and features
+Interactive Swagger documentation is available at `/api-docs` when the backend is running.
 
-## 📊 API Documentation
+For detailed API documentation, see [API_DOCS.md](./API_DOCS.md).
 
-Once the backend is running, visit:
-- **Swagger UI**: http://localhost:3000/api-docs
-- Interactive API documentation with try-it-out feature
+## Additional Documentation
 
-## 🎓 Assignment Submission
-
-This project is production-ready and includes:
-- ✅ Complete source code
-- ✅ Docker configuration for local development
-- ✅ Database migrations
-- ✅ Comprehensive documentation
-- ✅ Deployment guides
-- ✅ Technical write-up
-- ✅ API documentation
+- **[SYSTEM_DESIGN.md](./SYSTEM_DESIGN.md)** - Architecture, data flow, and scaling plans
+- **[API_DOCS.md](./API_DOCS.md)** - Complete API endpoint documentation
+- **[DEPLOYMENT.md](./DEPLOYMENT.md)** - Production deployment guide
+- **[VIDEO_SCRIPT.md](./VIDEO_SCRIPT.md)** - Demo video script and walkthrough
 
 ## License
 
 ISC
-

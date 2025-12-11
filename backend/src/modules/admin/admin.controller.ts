@@ -153,6 +153,58 @@ export class AdminController {
     const stats = await adminService.getRevenueStats(query);
     res.json({ stats });
   });
+
+  // ========== ATTENDANCE & RISK MANAGEMENT ==========
+
+  markAttendance = asyncHandler(async (req: AuthRequest, res: Response) => {
+    const appointment = await adminService.markAttendance(
+      req.params.appointmentId,
+      req.body,
+      req.userId!
+    );
+    res.json({
+      message: 'Attendance marked successfully',
+      appointment,
+    });
+  });
+
+  updatePatientRiskLevel = asyncHandler(async (req: AuthRequest, res: Response) => {
+    const result = await adminService.updatePatientRiskLevel(
+      req.params.patientId,
+      req.body,
+      req.userId!
+    );
+    res.json({
+      message: 'Patient risk level updated successfully',
+      ...result,
+    });
+  });
+
+  getSlotBookings = asyncHandler(async (req: AuthRequest, res: Response) => {
+    const result = await adminService.getSlotBookings(req.params.slotId);
+    res.json(result);
+  });
+
+  // ========== DOCTOR PROFILE MANAGEMENT ==========
+
+  createDoctorProfile = asyncHandler(async (req: AuthRequest, res: Response) => {
+    const doctor = await adminService.createDoctorProfile(req.body, req.userId!, req);
+    res.status(201).json({
+      message: 'Doctor profile created successfully',
+      doctor,
+    });
+  });
+
+  // Get specializations list
+  getSpecializations = asyncHandler(async (_req: AuthRequest, res: Response) => {
+    const { PREGNANCY_SPECIALIZATIONS } = await import('./admin.types');
+    res.json({ specializations: PREGNANCY_SPECIALIZATIONS });
+  });
+
+  setDoctorSlotAvailability = asyncHandler(async (req: AuthRequest, res: Response) => {
+    const result = await adminService.setDoctorSlotAvailability(req.body, req.userId!, req);
+    res.json(result);
+  });
 }
 
 export const adminController = new AdminController();
