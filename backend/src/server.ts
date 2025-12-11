@@ -55,11 +55,66 @@ const swaggerOptions: swaggerJsdoc.Options = {
 
 const swaggerSpec = swaggerJsdoc(swaggerOptions);
 
-// Middleware
+// CORS Configuration - Allow multiple origins
+const allowedOrigins = [
+  config.cors.frontendUrl,
+  'http://localhost:5173', // Local development
+  process.env.FRONTEND_URL, // Production frontend
+].filter(Boolean);
+
+// Handle CORS preflight requests (OPTIONS)
+app.options('*', (req, res) => {
+  const origin = req.headers.origin;
+  
+  // Check if origin is allowed
+  const isAllowed = !origin || allowedOrigins.some(allowed => {
+    if (typeof allowed === 'string') {
+      return origin === allowed || origin?.includes(allowed.replace('https://', '').replace('http://', ''));
+    }
+    return false;
+  }) || allowedOrigins.length === 0;
+  
+  if (isAllowed && origin) {
+    res.header('Access-Control-Allow-Origin', origin);
+  } else if (isAllowed) {
+    res.header('Access-Control-Allow-Origin', '*');
+  }
+  
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.header('Access-Control-Max-Age', '86400'); // 24 hours
+  
+  res.sendStatus(200);
+});
+
+// CORS Middleware
 app.use(cors({
-  origin: config.cors.frontendUrl,
+  origin: (origin, callback) => {
+    // Allow requests with no origin (mobile apps, Postman, etc.)
+    if (!origin) return callback(null, true);
+    
+    // Check if origin matches any allowed origin
+    const isAllowed = allowedOrigins.some(allowed => {
+      if (typeof allowed === 'string') {
+        return origin === allowed || origin?.includes(allowed.replace('https://', '').replace('http://', ''));
+      }
+      return false;
+    });
+    
+    if (isAllowed || allowedOrigins.length === 0) {
+      callback(null, true);
+    } else {
+      logger.warn(`CORS blocked origin: ${origin}. Allowed: ${allowedOrigins.join(', ')}`);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  exposedHeaders: ['Authorization'],
 }));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(apiLimiter);

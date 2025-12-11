@@ -10,3 +10,7 @@ cmds = ["npm run build"]
 [start]
 cmd = "npm start"
 
+# Ensure we're in the backend directory
+[providers]
+node = "20"
+

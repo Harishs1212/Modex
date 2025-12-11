@@ -1,9 +1,13 @@
 [phases.setup]
-nixPkgs = ["python311", "pip"]
+nixPkgs = ["python311", "pip311"]
 
 [phases.install]
 cmds = ["pip install -r requirements.txt"]
 
 [start]
 cmd = "uvicorn app.main:app --host 0.0.0.0 --port $PORT"
+
+# Ensure Python 3.11 is used
+[providers]
+python = "3.11"
 
