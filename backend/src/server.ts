@@ -22,6 +22,9 @@ import swaggerUi from 'swagger-ui-express';
 
 const app = express();
 
+// Trust proxy - Required for Railway/Render behind load balancer
+app.set('trust proxy', true);
+
 // Swagger configuration
 const swaggerOptions: swaggerJsdoc.Options = {
   definition: {
