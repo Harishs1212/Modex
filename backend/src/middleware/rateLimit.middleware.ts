@@ -14,7 +14,7 @@ export const authLimiter = rateLimit({
   message: 'Too many login attempts, please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
-  skip: (req) => {
+  skip: (_req) => {
     // Skip rate limiting in development mode
     return process.env.NODE_ENV === 'development';
   },

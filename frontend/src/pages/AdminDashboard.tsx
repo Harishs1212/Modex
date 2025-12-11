@@ -22,11 +22,15 @@ interface DashboardStats {
 export default function AdminDashboard() {
   const navigate = useNavigate();
   const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [appointments, setAppointments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingAppointments, setLoadingAppointments] = useState(false);
+  const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
   const [error, setError] = useState('');
 
   useEffect(() => {
     loadDashboardStats();
+    loadUpcomingAppointments();
   }, []);
 
   const loadDashboardStats = async () => {
@@ -59,9 +63,54 @@ export default function AdminDashboard() {
     }
   };
 
+  const loadUpcomingAppointments = async () => {
+    try {
+      setLoadingAppointments(true);
+      // Fetch all appointments (admin sees all)
+      const response = await apiClient.get('/appointments', {
+        params: {
+          limit: 100,
+          page: 1
+        }
+      });
+      
+      const appointmentsData = response.data?.appointments || [];
+      console.log('Fetched appointments:', appointmentsData);
+      
+      // Filter for future appointments with PENDING or CONFIRMED status
+      const filtered = Array.isArray(appointmentsData) ? appointmentsData.filter((apt: any) => {
+        const aptDate = new Date(apt.appointmentDate);
+        return aptDate >= new Date() && (apt.status === 'PENDING' || apt.status === 'CONFIRMED');
+      }) : [];
+      
+      console.log('Filtered appointments:', filtered);
+      setAppointments(filtered);
+    } catch (error: any) {
+      console.error('Failed to load appointments:', error);
+      setAppointments([]);
+    } finally {
+      setLoadingAppointments(false);
+    }
+  };
+
 
   const formatNumber = (num: number) => {
     return new Intl.NumberFormat('en-US').format(num);
+  };
+
+  const handleStatusChange = async (appointmentId: string, newStatus: 'CONFIRMED' | 'COMPLETED' | 'PENDING') => {
+    try {
+      setUpdatingStatus(appointmentId);
+      await apiClient.put(`/appointments/${appointmentId}`, {
+        status: newStatus
+      });
+      // Refresh appointments
+      await loadUpcomingAppointments();
+    } catch (error: any) {
+      alert(error.response?.data?.error || error.message || 'Failed to update appointment status');
+    } finally {
+      setUpdatingStatus(null);
+    }
   };
 
   const dashboardStats = stats
@@ -146,6 +195,82 @@ export default function AdminDashboard() {
           ))}
         </div>
       )}
+
+      {/* Upcoming Appointments Section */}
+      <div className="bg-white shadow-sm rounded-xl border border-gray-100 p-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+          <Calendar className="w-5 h-5 mr-2 text-indigo-600" />
+          Upcoming Appointments
+        </h3>
+        {loadingAppointments ? (
+          <div className="flex justify-center py-8">
+            <Loader2 className="w-6 h-6 text-indigo-600 animate-spin" />
+          </div>
+        ) : appointments.length > 0 ? (
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Patient</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Doctor</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date & Time</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {appointments.map((apt: any) => (
+                  <tr key={apt.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {apt.patient?.firstName} {apt.patient?.lastName}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {apt.doctor?.firstName} {apt.doctor?.lastName}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {new Date(apt.appointmentDate).toLocaleDateString()} {apt.startTime}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                        apt.status === 'CONFIRMED' ? 'bg-green-100 text-green-800' : 
+                        apt.status === 'COMPLETED' ? 'bg-blue-100 text-blue-800' :
+                        apt.status === 'CANCELLED' ? 'bg-red-100 text-red-800' :
+                        'bg-yellow-100 text-yellow-800'
+                      }`}>
+                        {apt.status}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm space-x-2">
+                      {apt.status === 'PENDING' && (
+                        <button
+                          onClick={() => handleStatusChange(apt.id, 'CONFIRMED')}
+                          disabled={updatingStatus === apt.id}
+                          className="px-2 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200 disabled:opacity-50"
+                        >
+                          {updatingStatus === apt.id ? 'Updating...' : 'Accept'}
+                        </button>
+                      )}
+                      {apt.status === 'CONFIRMED' && (
+                        <button
+                          onClick={() => handleStatusChange(apt.id, 'COMPLETED')}
+                          disabled={updatingStatus === apt.id}
+                          className="px-2 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 disabled:opacity-50"
+                        >
+                          {updatingStatus === apt.id ? 'Updating...' : 'Mark Over'}
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="text-center py-8 text-gray-500">
+            No upcoming appointments found
+          </div>
+        )}
+      </div>
 
       <div className="bg-white shadow-sm rounded-xl border border-gray-100 p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">System Status</h3>

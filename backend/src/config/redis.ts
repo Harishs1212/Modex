@@ -37,7 +37,7 @@ function initRedis() {
 });
 
     let errorLogged = false;
-redis.on('error', (err) => {
+redis.on('error', (_err) => {
       // Suppress repeated connection errors
       if (!errorLogged) {
         console.warn('Redis connection failed. Application will run without Redis cache.');

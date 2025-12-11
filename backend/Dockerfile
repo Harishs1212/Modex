@@ -13,17 +13,17 @@ RUN apt-get update && apt-get install -y \
     g++ \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy package files
+# Copy only package files first
 COPY package*.json ./
 COPY prisma ./prisma/
 
-# Install dependencies (bcrypt will build correctly with build tools)
-RUN npm install
+# Install dependencies cleanly - fresh install to rebuild native modules for Linux
+RUN npm install && npm rebuild
 
-# Generate Prisma Client (doesn't need database connection)
+# Generate Prisma Client
 RUN npx prisma generate
 
-# Copy source code (excluding node_modules via .dockerignore)
+# Copy source code
 COPY . .
 
 # Copy entrypoint script

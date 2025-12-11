@@ -45,6 +45,7 @@ interface CreatedSlot {
   maxCapacity: number;
   currentBookings: number;
   isActive: boolean;
+  availableSpots?: number;
 }
 
 export default function AdminDoctorManagement() {
@@ -57,6 +58,8 @@ export default function AdminDoctorManagement() {
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [createdSlots, setCreatedSlots] = useState<CreatedSlot[]>([]);
   const [selectedDoctorForSlots, setSelectedDoctorForSlots] = useState<string>('');
+  const [doctorSearchFilter, setDoctorSearchFilter] = useState('');
+  const [showDoctorDropdown, setShowDoctorDropdown] = useState(false);
 
   const [doctorForm, setDoctorForm] = useState({
     userId: '',
@@ -134,8 +137,7 @@ export default function AdminDoctorManagement() {
       const response = await apiClient.get('/slots', {
         params: { 
           doctorId: doctorUserId, 
-          limit: 100,
-          isActive: true 
+          limit: 100
         },
       });
       const slotsData = response.data?.slots || response.data || [];
@@ -467,20 +469,50 @@ export default function AdminDoctorManagement() {
               </div>
               <form onSubmit={handleCreateDoctor} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Doctor User</label>
-                  <select
-                    required
-                    value={doctorForm.userId}
-                    onChange={(e) => setDoctorForm({ ...doctorForm, userId: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-                  >
-                    <option value="">Select Doctor User</option>
-                    {users.map((user) => (
-                      <option key={user.id} value={user.id}>
-                        {user.firstName} {user.lastName} ({user.email})
-                      </option>
-                    ))}
-                  </select>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Doctor Name *</label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      required
+                      placeholder="Type doctor name or email"
+                      value={doctorSearchFilter}
+                      onChange={(e) => {
+                        setDoctorSearchFilter(e.target.value);
+                        setShowDoctorDropdown(true);
+                      }}
+                      onFocus={() => setShowDoctorDropdown(true)}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                    />
+                    {showDoctorDropdown && doctorSearchFilter && (
+                      <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-64 overflow-y-auto">
+                        {users
+                          .filter(user =>
+                            `${user.firstName} ${user.lastName}`.toLowerCase().includes(doctorSearchFilter.toLowerCase()) ||
+                            user.email.toLowerCase().includes(doctorSearchFilter.toLowerCase())
+                          )
+                          .map((user) => (
+                            <div
+                              key={user.id}
+                              onClick={() => {
+                                setDoctorForm({ ...doctorForm, userId: user.id });
+                                setDoctorSearchFilter(`${user.firstName} ${user.lastName}`);
+                                setShowDoctorDropdown(false);
+                              }}
+                              className="px-4 py-2 hover:bg-indigo-50 cursor-pointer border-b border-gray-200"
+                            >
+                              <div className="font-semibold text-gray-900">{user.firstName} {user.lastName}</div>
+                              <div className="text-sm text-gray-500">{user.email}</div>
+                            </div>
+                          ))}
+                        {users.filter(user =>
+                          `${user.firstName} ${user.lastName}`.toLowerCase().includes(doctorSearchFilter.toLowerCase()) ||
+                          user.email.toLowerCase().includes(doctorSearchFilter.toLowerCase())
+                        ).length === 0 && (
+                          <div className="px-4 py-2 text-gray-500 text-center">No doctors found</div>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">Specialization *</label>
