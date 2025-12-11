@@ -78,34 +78,19 @@ npx prisma db seed
 
 Add the following environment variables in Railway:
 
-```env
-# Database
-DATABASE_URL=postgresql://postgres:[PASSWORD]@db.[PROJECT-REF].supabase.co:5432/postgres
-
-# Redis
-REDIS_HOST=[YOUR-ENDPOINT].upstash.io
-REDIS_PORT=6379
-REDIS_PASSWORD=[YOUR-REDIS-PASSWORD]
-
-# JWT
-JWT_SECRET=your-super-secret-jwt-key-min-32-characters-long
-JWT_ACCESS_EXPIRY=15m
-JWT_REFRESH_EXPIRY=7d
-
-# ML Service
-ML_SERVICE_URL=https://[YOUR-ML-SERVICE].railway.app
-
-# Frontend
-FRONTEND_URL=https://[YOUR-FRONTEND].vercel.app
-
-# Server
-PORT=3000
-NODE_ENV=production
-
-# File Upload
-MAX_FILE_SIZE=10485760
-UPLOAD_DIR=./uploads
-```
+- `DATABASE_URL`: PostgreSQL connection string from Supabase
+- `REDIS_HOST`: Redis endpoint from Upstash
+- `REDIS_PORT`: Redis port (typically 6379)
+- `REDIS_PASSWORD`: Redis password from Upstash
+- `JWT_SECRET`: Strong secret key (minimum 32 characters)
+- `JWT_ACCESS_EXPIRY`: Access token expiry (e.g., 15m)
+- `JWT_REFRESH_EXPIRY`: Refresh token expiry (e.g., 7d)
+- `ML_SERVICE_URL`: URL of deployed ML service
+- `FRONTEND_URL`: URL of deployed frontend
+- `PORT`: Server port (default: 3000)
+- `NODE_ENV`: Environment (production)
+- `MAX_FILE_SIZE`: Maximum file upload size in bytes
+- `UPLOAD_DIR`: Directory for file uploads
 
 ### Step 3: Configure Build Settings
 
@@ -153,9 +138,7 @@ npx prisma migrate deploy
 
 ### Step 2: Configure Environment Variables
 
-```env
-PORT=8000
-```
+- `PORT`: Server port (default: 8000)
 
 ### Step 3: Configure Build Settings
 
@@ -191,9 +174,7 @@ Update the `ML_SERVICE_URL` in your backend service with the ML service URL.
 
 Add the following environment variable:
 
-```env
-VITE_API_URL=https://[YOUR-BACKEND].railway.app
-```
+- `VITE_API_URL`: URL of deployed backend API
 
 **Important**: Vite requires the `VITE_` prefix for environment variables to be exposed to the client.
 
@@ -211,33 +192,30 @@ Update the `FRONTEND_URL` environment variable in your backend with your Vercel 
 
 ### Backend (Railway/Render)
 
-```env
-DATABASE_URL=postgresql://postgres:[PASSWORD]@db.[PROJECT-REF].supabase.co:5432/postgres
-REDIS_HOST=[ENDPOINT].upstash.io
-REDIS_PORT=6379
-REDIS_PASSWORD=[PASSWORD]
-JWT_SECRET=[MIN-32-CHARACTERS]
-JWT_ACCESS_EXPIRY=15m
-JWT_REFRESH_EXPIRY=7d
-ML_SERVICE_URL=https://[ML-SERVICE].railway.app
-FRONTEND_URL=https://[FRONTEND].vercel.app
-PORT=3000
-NODE_ENV=production
-MAX_FILE_SIZE=10485760
-UPLOAD_DIR=./uploads
-```
+Required environment variables:
+- `DATABASE_URL`: PostgreSQL connection string
+- `REDIS_HOST`: Redis endpoint
+- `REDIS_PORT`: Redis port
+- `REDIS_PASSWORD`: Redis password
+- `JWT_SECRET`: JWT secret key (minimum 32 characters)
+- `JWT_ACCESS_EXPIRY`: Access token expiry
+- `JWT_REFRESH_EXPIRY`: Refresh token expiry
+- `ML_SERVICE_URL`: ML service URL
+- `FRONTEND_URL`: Frontend URL
+- `PORT`: Server port
+- `NODE_ENV`: Environment (production)
+- `MAX_FILE_SIZE`: Maximum file upload size
+- `UPLOAD_DIR`: Upload directory
 
 ### Frontend (Vercel)
 
-```env
-VITE_API_URL=https://[BACKEND].railway.app
-```
+Required environment variables:
+- `VITE_API_URL`: Backend API URL
 
 ### ML Service (Railway)
 
-```env
-PORT=8000
-```
+Required environment variables:
+- `PORT`: Server port
 
 ## 7. Post-Deployment Checklist
 

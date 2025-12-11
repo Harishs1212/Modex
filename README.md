@@ -134,48 +134,7 @@ npm run dev
 
 ## Environment Variables
 
-### Backend (.env)
-
-```env
-# Database
-DATABASE_URL=postgresql://user:password@host:5432/neocaresync?schema=public
-
-# Redis
-REDIS_HOST=localhost
-REDIS_PORT=6379
-REDIS_PASSWORD=
-
-# JWT
-JWT_SECRET=your-super-secret-jwt-key-change-in-production
-JWT_ACCESS_EXPIRY=15m
-JWT_REFRESH_EXPIRY=7d
-
-# ML Service
-ML_SERVICE_URL=http://localhost:8000
-
-# Frontend
-FRONTEND_URL=http://localhost:5173
-
-# Server
-PORT=3000
-NODE_ENV=development
-
-# File Upload
-MAX_FILE_SIZE=10485760
-UPLOAD_DIR=./uploads
-```
-
-### Frontend (.env)
-
-```env
-VITE_API_URL=http://localhost:3000
-```
-
-### ML Service (.env)
-
-```env
-PORT=8000
-```
+Required environment variables are documented in the deployment guide. See [DEPLOYMENT.md](./DEPLOYMENT.md) for details on configuring environment variables for each service.
 
 ## Folder Structure
 
