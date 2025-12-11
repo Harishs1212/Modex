@@ -201,6 +201,9 @@ For detailed API documentation, see [API_DOCS.md](./API_DOCS.md).
 - **[SYSTEM_DESIGN.md](./SYSTEM_DESIGN.md)** - Architecture, data flow, and scaling plans
 - **[API_DOCS.md](./API_DOCS.md)** - Complete API endpoint documentation
 - **[DEPLOYMENT.md](./DEPLOYMENT.md)** - Production deployment guide
+- **[DEPLOYMENT_CLOUD.md](./DEPLOYMENT_CLOUD.md)** - **Step-by-step cloud deployment guide (Vercel + Railway/Render + Supabase)**
+- **[QUICK_START_DEPLOY.md](./QUICK_START_DEPLOY.md)** - **Quick deployment checklist**
+- **[ENV_TEMPLATE.md](./ENV_TEMPLATE.md)** - **Environment variables template**
 - **[VIDEO_SCRIPT.md](./VIDEO_SCRIPT.md)** - Demo video script and walkthrough
 
 ## License
